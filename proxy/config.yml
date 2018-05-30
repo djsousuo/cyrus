@@ -1,0 +1,21 @@
+scan:
+  exclude:
+    - sql.so
+    - email.so
+    - xst.so
+    - crossdomain.so
+    - clientaccesspolicy.so
+  scope:
+    - localhost
+    - ngrok.io
+    - webscantest.com
+
+redis:
+  addr: localhost:6379
+
+rabbitmq:
+  addr: amqp://guest:guest@localhost:5672/
+  exchangename: records
+
+browser:
+  addr: http://localhost:5050/
