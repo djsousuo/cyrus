@@ -1,9 +1,9 @@
 package mq
 
 import (
-	"../models"
 	"bytes"
 	"encoding/gob"
+	"github.com/nim4/cyrus/core/models"
 	"github.com/streadway/amqp"
 	"log"
 )
@@ -68,8 +68,8 @@ func Subscribe(queueName string) (chan models.Record, error) {
 	}
 
 	err = ch.QueueBind(
-		q.Name, // queue name
-		"",     // routing key
+		q.Name,                              // queue name
+		"",                                  // routing key
 		models.Config.RabbitMQ.ExchangeName, // exchange
 		false,
 		nil)

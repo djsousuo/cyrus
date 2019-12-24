@@ -1,20 +1,23 @@
-package proxy
+package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/gob"
+	"flag"
+	"github.com/elazarl/goproxy"
+	"github.com/nim4/cyrus/core/cache"
+	"github.com/nim4/cyrus/core/models"
+	"github.com/nim4/cyrus/core/mq"
+	"github.com/nim4/cyrus/core/utils"
+	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
-	"time"
-
-	"../models"
-	"../mq"
-	"bytes"
-	"github.com/elazarl/goproxy"
-	"io"
-	"strings"
 	"net"
+	"net/http"
+	"strings"
+	"time"
 )
 
 func drainBody(r io.ReadCloser) (rc io.ReadCloser, b []byte, err error) {
@@ -25,12 +28,14 @@ func drainBody(r io.ReadCloser) (rc io.ReadCloser, b []byte, err error) {
 	return ioutil.NopCloser(bytes.NewReader(b)), b, nil
 }
 
-//StartProxy and capture request and response
-func StartProxy(addr string) {
+//start proxy and capture request and response
+func startProxy(addr string) error {
 
-	setCA(caCert, caKey)
+	if err := setCA(caCert, caKey); err != nil {
+		return err
+	}
+
 	proxy := goproxy.NewProxyHttpServer()
-
 	tr := http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
@@ -38,6 +43,7 @@ func StartProxy(addr string) {
 		DisableCompression: true,
 		DisableKeepAlives:  true,
 	}
+
 	proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
 	proxy.OnRequest().DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 
@@ -112,7 +118,7 @@ func StartProxy(addr string) {
 		return req, nil
 	})
 	log.Printf("Starting proxy server on %q", addr)
-	log.Fatal(http.ListenAndServe(addr, proxy))
+	return http.ListenAndServe(addr, proxy)
 }
 
 var caCert = []byte(`-----BEGIN CERTIFICATE-----
@@ -212,4 +218,28 @@ func setCA(caCert, caKey []byte) error {
 	goproxy.HTTPMitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectHTTPMitm, TLSConfig: goproxy.TLSConfigFromCA(&goproxyCa)}
 	goproxy.RejectConnect = &goproxy.ConnectAction{Action: goproxy.ConnectReject, TLSConfig: goproxy.TLSConfigFromCA(&goproxyCa)}
 	return nil
+}
+
+func main() {
+
+	configFile := flag.String("config", "config.yml", "Path of configuration file")
+	flag.Parse()
+
+	err := models.LoadConfig(*configFile)
+	utils.FailOnError(err, "Reading config file failed")
+
+	err = cache.Connect(models.Config.Redis.Addr, models.Config.Redis.Password)
+	utils.FailOnError(err, "Connecting to redis failed")
+
+	b := new(bytes.Buffer)
+	err = gob.NewEncoder(b).Encode(models.Config)
+	utils.FailOnError(err, "Encoding config failed")
+
+	err = cache.Set("Config", b.Bytes())
+	utils.FailOnError(err, "Sending configuration to Cache server failed")
+
+	err = mq.Connect(true)
+	utils.FailOnError(err, "Connecting to AMQP failed")
+
+	log.Fatal(startProxy(models.Config.Proxy.Addr))
 }

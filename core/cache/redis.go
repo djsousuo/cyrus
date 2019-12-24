@@ -3,7 +3,7 @@ package cache
 import (
 	"github.com/go-redis/redis"
 
-	"../models"
+	"github.com/nim4/cyrus/core/models"
 )
 
 var client *redis.Client

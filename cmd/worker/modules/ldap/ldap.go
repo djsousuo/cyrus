@@ -1,11 +1,12 @@
 package main
 
 import (
-	"../../../core/models"
-	"../../../core/utils"
-	"github.com/jinzhu/configor"
-	"log"
 	"bytes"
+	"github.com/jinzhu/configor"
+	"github.com/nim4/cyrus/core/cache"
+	"github.com/nim4/cyrus/core/models"
+	"github.com/nim4/cyrus/core/utils"
+	"log"
 )
 
 type xpathConfig struct {
@@ -18,10 +19,10 @@ var config xpathConfig
 
 func submit(rec models.Record, desc string, out chan<- models.Record) {
 	rec.AddVulnerability(models.Vulnerability{
-		Name:     "XPATH Injection",
+		Name:     "LDAP Injection",
 		Desc:     desc,
 		Severity: models.HIGH,
-		Links:    []string{"https://www.owasp.org/index.php/XPATH_Injection"},
+		Links:    []string{"https://www.owasp.org/index.php/LDAP_injection"},
 	})
 	out <- rec
 }
@@ -31,14 +32,14 @@ type module bool
 var info models.ModuleInfo
 
 func (m module) OnLoad(dir string) (models.ModuleInfo, error) {
-	err := configor.New(&configor.Config{ErrorOnUnmatchedKeys: true}).Load(&config, dir+"/xpath.yml")
+	err := configor.New(&configor.Config{ErrorOnUnmatchedKeys: true}).Load(&config, dir+"/ldap.yml")
 	if err != nil {
 		return info, err
 	}
 
 	info = models.ModuleInfo{
-		ID:   "xpath-module",
-		Name: "XPATH Module",
+		ID:   "ldap-module",
+		Name: "LDAP Module",
 	}
 	return info, nil
 }
@@ -46,8 +47,14 @@ func (m module) OnLoad(dir string) (models.ModuleInfo, error) {
 func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) (err error) {
 outter:
 	for rec := range inp {
+		key := rec.ID.String()
+		if _, err := cache.Get(key); err == nil {
+			//Already checked
+			continue
+		}
+
 		// Error Based
-		for _, inj := range utils.Inject(rec.Req, []string{"'\"", "]]]]]]]]]", "<!--"}) {
+		for _, inj := range utils.Inject(rec.Req, []string{" '#^($!@$)(()))******"}) {
 			resp, err := inj.Send()
 			if err != nil {
 				log.Print("Sending request failed: ", err)
@@ -64,6 +71,11 @@ outter:
 					}
 				}
 			}
+		}
+
+		err := cache.Set(key, 1)
+		if err != nil {
+			log.Print("Error catching result ", err)
 		}
 	}
 	return nil

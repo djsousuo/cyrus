@@ -28,4 +28,3 @@ func (s Stack) Peek() string {
 	}
 	return s[l-1]
 }
-

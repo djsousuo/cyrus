@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"../models"
 	"encoding/json"
+	"github.com/nim4/cyrus/core/models"
 	"net/http"
 	"net/url"
 	"strings"
@@ -88,7 +88,7 @@ func queryStringInject(req models.Request, payload string) []models.Request {
 		ret = append(ret, payloadQueryString(req, k, payload, false))
 		ret = append(ret, payloadQueryString(req, k, payload, true))
 		for _, v := range vs {
-			ret = append(ret, payloadQueryString(req, k, v + payload, false))
+			ret = append(ret, payloadQueryString(req, k, v+payload, false))
 		}
 	}
 
@@ -103,7 +103,7 @@ func headerInject(req models.Request, payload string) []models.Request {
 		ret = append(ret, payloadHeader(req, k, payload, false))
 		ret = append(ret, payloadHeader(req, k, payload, true))
 		for _, v := range vs {
-			ret = append(ret, payloadHeader(req, k, v + payload, false))
+			ret = append(ret, payloadHeader(req, k, v+payload, false))
 		}
 	}
 
@@ -148,7 +148,7 @@ func bodyInject(req models.Request, payload string) []models.Request {
 				}
 
 				for _, v := range vs {
-					r, err := payloadQueryBody(req, k, v + payload, false)
+					r, err := payloadQueryBody(req, k, v+payload, false)
 					if err == nil {
 						ret = append(ret, r)
 					}

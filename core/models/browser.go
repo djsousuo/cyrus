@@ -1,12 +1,19 @@
 package models
 
 import (
-	"net/http"
 	"bytes"
-	"time"
-	"io/ioutil"
-	"errors"
 	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"net/http"
+	"time"
+)
+
+const (
+	A = iota
+	B
+	C
+	D
 )
 
 type BrowserRequest struct {
@@ -24,11 +31,10 @@ type BrowserResponse struct {
 
 func FromRequest(req Request) (br BrowserRequest) {
 	br = BrowserRequest{
-		Method:  req.Method,
-		URL:     req.URL.String(),
-		Body:    string(req.Content),
+		Method: req.Method,
+		URL:    req.URL.String(),
+		Body:   string(req.Content),
 	}
-
 
 	br.Headers = make(map[string]string)
 	for k, v := range req.Headers {
@@ -37,7 +43,6 @@ func FromRequest(req Request) (br BrowserRequest) {
 
 	return
 }
-
 
 func (br *BrowserRequest) Send(endpoint string) (resp BrowserResponse, err error) {
 	for i := 0; i < Config.Scan.Retry; i++ {

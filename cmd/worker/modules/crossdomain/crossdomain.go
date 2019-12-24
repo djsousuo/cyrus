@@ -1,12 +1,12 @@
 package main
 
 import (
-	"../../../core/cache"
-	"../../../core/models"
-	"log"
 	"encoding/xml"
-	"strings"
 	"fmt"
+	"github.com/nim4/cyrus/core/cache"
+	"github.com/nim4/cyrus/core/models"
+	"log"
+	"strings"
 )
 
 type module bool
@@ -29,16 +29,11 @@ func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) erro
 			continue
 		}
 
-		err := cache.Set(key, 1)
-		if err != nil {
-			log.Print("Error catching result ", err)
-		}
-
 		test := rec
 		test.Req.Method = "GET"
 		test.Req.URL.RawQuery = ""
 		test.Req.URL.Path = "/crossdomain.xml"
-		err = test.Send()
+		err := test.Send()
 		if err != nil {
 			log.Print(err)
 			continue
@@ -81,7 +76,11 @@ func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) erro
 					}
 				}
 			}
+		}
 
+		err = cache.Set(key, 1)
+		if err != nil {
+			log.Print("Error catching result ", err)
 		}
 	}
 	return nil

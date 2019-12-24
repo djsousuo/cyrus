@@ -1,8 +1,9 @@
 package main
 
 import (
-	"../../../core/models"
-	"../../../core/utils"
+	"github.com/nim4/cyrus/core/cache"
+	"github.com/nim4/cyrus/core/models"
+	"github.com/nim4/cyrus/core/utils"
 	"log"
 )
 
@@ -31,6 +32,12 @@ func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) erro
 outter:
 	for rec := range inp {
 
+		key := rec.ID.String()
+		if _, err := cache.Get(key); err == nil {
+			//Already checked
+			continue
+		}
+
 		for _, inj := range utils.Inject(rec.Req, []string{"\r\nCyr: 1"}) {
 			resp, err := inj.Send()
 			if err != nil {
@@ -45,6 +52,11 @@ outter:
 				continue outter
 			}
 
+		}
+
+		err := cache.Set(key, 1)
+		if err != nil {
+			log.Print("Error catching result ", err)
 		}
 	}
 	return nil

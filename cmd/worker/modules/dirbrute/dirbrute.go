@@ -1,15 +1,15 @@
 package main
 
 import (
-	"../../../core/cache"
-	"../../../core/models"
+	"bufio"
 	"fmt"
+	"github.com/nim4/cyrus/core/cache"
+	"github.com/nim4/cyrus/core/models"
 	"log"
-	"strings"
+	"net/http"
 	"net/url"
 	"os"
-	"bufio"
-	"net/http"
+	"strings"
 )
 
 type module bool
@@ -73,10 +73,6 @@ func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) erro
 			//Already checked
 			continue
 		}
-		err := cache.Set(key, 1)
-		if err != nil {
-			log.Print("Error catching key ", err)
-		}
 
 		founds, err := burte(u)
 		if err != nil {
@@ -92,6 +88,12 @@ func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) erro
 			})
 		}
 		out <- rec
+
+		err = cache.Set(key, 1)
+		if err != nil {
+			log.Print("Error catching key ", err)
+		}
+
 	}
 	return nil
 }

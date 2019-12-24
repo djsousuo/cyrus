@@ -1,15 +1,16 @@
 package main
 
 import (
-	"../../../core/models"
-	"../../../core/utils"
+	"bytes"
 	"github.com/jinzhu/configor"
+	"github.com/nim4/cyrus/core/cache"
+	"github.com/nim4/cyrus/core/models"
+	"github.com/nim4/cyrus/core/utils"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"bytes"
 )
 
 type sqlConfig struct {
@@ -79,6 +80,12 @@ func (m module) OnLoad(dir string) (models.ModuleInfo, error) {
 func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) (err error) {
 outter:
 	for rec := range inp {
+		key := rec.ID.String()
+		if _, err := cache.Get(key); err == nil {
+			//Already checked
+			continue
+		}
+
 		//check pattern
 		check := string(rec.Req.Content)
 		for k, vs := range rec.Req.URL.Query() {
@@ -146,6 +153,10 @@ outter:
 
 		}
 
+		err := cache.Set(key, 1)
+		if err != nil {
+			log.Print("Error catching result ", err)
+		}
 	}
 	return nil
 }

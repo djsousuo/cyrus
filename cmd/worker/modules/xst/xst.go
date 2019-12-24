@@ -1,11 +1,11 @@
 package main
 
 import (
-	"../../../core/cache"
-	"../../../core/models"
-	"log"
-	"github.com/google/uuid"
 	"bytes"
+	"github.com/google/uuid"
+	"github.com/nim4/cyrus/core/cache"
+	"github.com/nim4/cyrus/core/models"
+	"log"
 )
 
 type module bool
@@ -32,15 +32,10 @@ func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) erro
 			continue
 		}
 
-		err := cache.Set(key, 1)
-		if err != nil {
-			log.Print("Error catching result ", err)
-		}
-
 		test := rec
 		test.Req.Method = "TRACE"
 		test.Req.Content = []byte(uuid.New().String())
-		err = test.Send()
+		err := test.Send()
 		if err != nil {
 			log.Print(err)
 			continue
@@ -54,6 +49,11 @@ func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) erro
 				Links:    []string{"https://www.owasp.org/index.php/Cross_Site_Tracing"},
 			})
 			out <- test
+		}
+
+		err = cache.Set(key, 1)
+		if err != nil {
+			log.Print("Error catching result ", err)
 		}
 	}
 	return nil

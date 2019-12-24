@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"time"
-	"strings"
-	"github.com/google/uuid"
 	"strconv"
+	"strings"
+	"time"
 )
 
 //Request holder model
@@ -99,7 +99,7 @@ func (r *Response) LogString() string {
 }
 
 const (
-	LOW    = iota
+	LOW = iota
 	MEDIUM
 	HIGH
 )
@@ -162,14 +162,14 @@ func (r *Record) LogString() string {
 		r.ID,
 		r.Req.LogString(),
 		r.Resp.LogString(),
-		"[" + strings.Join(vuln, ", ") + "]",
+		"["+strings.Join(vuln, ", ")+"]",
 	)
 }
 
 func NewRecord(req Request, resp Response) Record {
 	return Record{
-		ID: uuid.New(),
-		Req: req,
+		ID:   uuid.New(),
+		Req:  req,
 		Resp: resp,
 	}
 }

@@ -6,15 +6,15 @@ import (
 	"path/filepath"
 	"plugin"
 
-	"../core/cache"
-	"../core/models"
-	"../core/mq"
-	"../core/utils"
 	"bytes"
 	"encoding/gob"
+	"flag"
+	"github.com/nim4/cyrus/core/cache"
+	"github.com/nim4/cyrus/core/models"
+	"github.com/nim4/cyrus/core/mq"
+	"github.com/nim4/cyrus/core/utils"
 	"os"
 	"strconv"
-	"flag"
 )
 
 //Tasks holds loaded worker
@@ -23,7 +23,6 @@ var Tasks map[string]models.ModuleInfo
 func main() {
 	addr := flag.String("-a", "localhost:6379", "Address of the configuration server")
 	password := flag.String("-p", "", "Password of the configuration server")
-
 
 	log.SetFlags(log.Ldate | log.Ltime | log.LUTC | log.Lshortfile)
 
@@ -34,7 +33,6 @@ func main() {
 	r := bytes.NewReader(b)
 	err = gob.NewDecoder(r).Decode(&models.Config)
 	utils.FailOnError(err, "Decoding Cache server Config key failed")
-
 
 	mq.Connect(false)
 	utils.FailOnError(err, "Connecting to AMQP failed")

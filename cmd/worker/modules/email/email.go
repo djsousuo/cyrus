@@ -1,24 +1,24 @@
 package main
 
 import (
-	"../../../core/cache"
-	"../../../core/models"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/nim4/cyrus/core/cache"
+	"github.com/nim4/cyrus/core/models"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
-	"errors"
-	"net"
 )
 
 var emailRegexp = regexp.MustCompile("[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*")
 
 func extractEmails(body string) (ret []string) {
 	for _, email := range emailRegexp.FindAllString(body, -1) {
-		if (validateEmailHost(email)) {
+		if validateEmailHost(email) {
 			ret = append(ret, email)
 		}
 	}
@@ -52,7 +52,7 @@ func checkLeak(email string) ([]string, error) {
 
 	var leaks struct {
 		Status string
-		Data []struct {
+		Data   []struct {
 			Title string
 		} `json:"data,omitempty"`
 	}
@@ -105,17 +105,17 @@ func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) erro
 					continue
 				}
 
-				err = cache.Set(key, 1)
-				if err != nil {
-					log.Print("Error catching result ", err)
-				}
-
 				if len(leaks) > 0 {
 					test.AddVulnerability(models.Vulnerability{
 						Name:     "Email with leaked password",
 						Desc:     fmt.Sprintf("%q found in leak databases: %v ", email, strings.Join(leaks, ", ")),
 						Severity: models.HIGH,
 					})
+				}
+
+				err = cache.Set(key, 1)
+				if err != nil {
+					log.Print("Error catching result ", err)
 				}
 			}
 			out <- test

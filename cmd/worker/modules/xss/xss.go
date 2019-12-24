@@ -1,8 +1,9 @@
 package main
 
 import (
-	"../../../core/models"
-	"../../../core/utils"
+	"github.com/nim4/cyrus/core/cache"
+	"github.com/nim4/cyrus/core/models"
+	"github.com/nim4/cyrus/core/utils"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -66,6 +67,11 @@ func checkXSS(rec models.Record) bool {
 
 func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) error {
 	for rec := range inp {
+		key := rec.ID.String()
+		if _, err := cache.Get(key); err == nil {
+			//Already checked
+			continue
+		}
 
 		// Some checks to minimize selenium calls
 		if rec.Resp.Headers.Get("Content-Type") != "" && !strings.Contains(rec.Resp.Headers.Get("Content-Type"), "text/html") {
@@ -86,6 +92,11 @@ func (m module) Execute(inp <-chan models.Record, out chan<- models.Record) erro
 				break
 			}
 
+		}
+
+		err := cache.Set(key, 1)
+		if err != nil {
+			log.Print("Error catching result ", err)
 		}
 	}
 	return nil
